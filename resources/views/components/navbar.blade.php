@@ -27,8 +27,11 @@
 
             <!-- Action Buttons -->
             <div class="hidden md:flex items-center space-x-4">
-                <a href="/login" class="text-slate-600 hover:text-emerald-600 font-medium px-4 py-2 rounded-lg hover:bg-emerald-50 transition-colors">Login</a>
-                <a href="/dashboard" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 transition-all hover:-translate-y-0.5">Dashboard</a>
+                @auth
+                    <a href="{{ route('dashboard') }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/50 transition-all hover:-translate-y-0.5">Masuk Dashboard</a>
+                @else
+                    <a href="{{ route('login') }}" class="text-slate-600 hover:text-emerald-600 font-medium px-4 py-2 rounded-lg hover:bg-emerald-50 transition-colors">Login Admin</a>
+                @endauth
             </div>
 
             <!-- Mobile menu button -->

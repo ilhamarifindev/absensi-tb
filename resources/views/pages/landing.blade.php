@@ -33,10 +33,17 @@
                     </p>
                     
                     <div class="flex flex-wrap items-center gap-4">
-                        <a href="/login" class="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
-                            Mulai Absensi
-                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
-                        </a>
+                        @auth
+                            <a href="{{ route('dashboard') }}" class="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
+                                Lanjut ke Dashboard
+                                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-semibold rounded-xl shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center gap-2">
+                                Login Admin
+                                <i data-lucide="log-in" class="w-5 h-5"></i>
+                            </a>
+                        @endauth
                         <a href="#" class="px-8 py-4 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 shadow-sm hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300">
                             Tentang Sekolah
                         </a>

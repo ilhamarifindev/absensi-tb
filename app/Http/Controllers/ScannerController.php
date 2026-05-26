@@ -14,8 +14,30 @@ class ScannerController extends Controller
         return view('pages.scanner');
     }
 
+    public function launchScanner()
+    {
+        // Gunakan VBScript untuk menjalankan Python secara tersembunyi (tanpa memunculkan console)
+        $scriptPath = base_path('scanner.py');
+        $vbsPath = base_path('launch_hidden.vbs');
+        
+        $vbsCode = "Set WshShell = CreateObject(\"WScript.Shell\")\n" .
+                   "WshShell.Run \"cmd /c python \"\"\" & WScript.Arguments(0) & \"\"\" > NUL 2>&1\", 0, False";
+        file_put_contents($vbsPath, $vbsCode);
+        
+        pclose(popen('wscript "' . $vbsPath . '" "' . $scriptPath . '"', 'r'));
+        
+        return response()->json(['success' => true, 'message' => 'Scanner Python diluncurkan!']);
+    }
+
     public function scan(Request $request)
     {
+        if ($request->header('X-API-Key') !== env('SCANNER_API_KEY', 'default_secret_key')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized API Key'
+            ], 401);
+        }
+
         $request->validate([
             'qr_code' => 'required|string'
         ]);
@@ -26,7 +48,7 @@ class ScannerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'QR Code tidak dikenali atau siswa tidak ditemukan.'
-            ], 404);
+            ], 200);
         }
 
         $today = Carbon::today();
@@ -40,7 +62,7 @@ class ScannerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Siswa sudah melakukan absensi hari ini.'
-            ], 400);
+            ], 200);
         }
 
         // Tentukan status kehadiran (contoh batas waktu 07:15)
@@ -69,6 +91,13 @@ class ScannerController extends Controller
 
     public function scanOut(Request $request)
     {
+        if ($request->header('X-API-Key') !== env('SCANNER_API_KEY', 'default_secret_key')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized API Key'
+            ], 401);
+        }
+
         $request->validate([
             'qr_code' => 'required|string'
         ]);
@@ -79,7 +108,7 @@ class ScannerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'QR Code tidak dikenali atau siswa tidak ditemukan.'
-            ], 404);
+            ], 200);
         }
 
         $today = Carbon::today();
@@ -94,7 +123,7 @@ class ScannerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Siswa belum melakukan absensi masuk hari ini.'
-            ], 400);
+            ], 200);
         }
 
         // Cek apakah sudah absen pulang
@@ -107,7 +136,7 @@ class ScannerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Siswa sudah melakukan absensi pulang hari ini.'
-            ], 400);
+            ], 200);
         }
 
         $now = Carbon::now();

@@ -44,8 +44,9 @@
                                 <i data-lucide="log-in" class="w-5 h-5"></i>
                             </a>
                         @endauth
-                        <a href="#" class="px-8 py-4 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 shadow-sm hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300">
-                            Tentang Sekolah
+                        <a href="{{ route('scanner') }}" class="px-8 py-4 bg-white text-slate-700 font-semibold rounded-xl border border-slate-200 shadow-sm hover:border-emerald-200 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-300 flex items-center gap-2">
+                            Buka Scanner QR
+                            <i data-lucide="qr-code" class="w-5 h-5"></i>
                         </a>
                     </div>
                     

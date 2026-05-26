@@ -43,15 +43,14 @@
                 <i data-lucide="calendar-days" class="w-5 h-5 text-emerald-400 group-hover:text-emerald-300 transition-colors"></i>
                 <span class="font-medium whitespace-nowrap" x-show="sidebarOpen" x-transition.opacity>Jadwal</span>
             </a>
-
-            <a href="{{ route('scanner') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl text-emerald-100 hover:bg-emerald-800/50 hover:text-white transition-colors group">
-                <i data-lucide="qr-code" class="w-5 h-5 text-emerald-400 group-hover:text-emerald-300 transition-colors"></i>
-                <span class="font-medium whitespace-nowrap" x-show="sidebarOpen" x-transition.opacity>QR Code Scanner</span>
+            
+            <a href="{{ route('monitor') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors group {{ str_starts_with($currentRoute ?? '', 'monitor') ? 'bg-emerald-800/80 text-white border border-emerald-700/50 shadow-inner' : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-white' }}">
+                <i data-lucide="monitor" class="w-5 h-5 {{ str_starts_with($currentRoute ?? '', 'monitor') ? 'text-emerald-300' : 'text-emerald-400' }} group-hover:text-emerald-300 transition-colors"></i>
+                <span class="font-medium whitespace-nowrap" x-show="sidebarOpen" x-transition.opacity>Live Monitor Scanner</span>
             </a>
-
-            <a href="#" class="flex items-center gap-3 px-3 py-3 rounded-xl text-emerald-100 hover:bg-emerald-800/50 hover:text-white transition-colors group">
-                <i data-lucide="file-bar-chart" class="w-5 h-5 text-emerald-400 group-hover:text-emerald-300 transition-colors"></i>
-                <span class="font-medium whitespace-nowrap" x-show="sidebarOpen" x-transition.opacity>Laporan</span>
+            <a href="{{ route('logs.index') }}" class="flex items-center gap-3 px-3 py-3 rounded-xl transition-colors group {{ str_starts_with($currentRoute ?? '', 'logs') ? 'bg-emerald-800/80 text-white border border-emerald-700/50 shadow-inner' : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-white' }}">
+                <i data-lucide="scroll-text" class="w-5 h-5 {{ str_starts_with($currentRoute ?? '', 'logs') ? 'text-emerald-300' : 'text-emerald-400' }} group-hover:text-emerald-300 transition-colors"></i>
+                <span class="font-medium whitespace-nowrap" x-show="sidebarOpen" x-transition.opacity>Log Aktivitas</span>
             </a>
 
             <a href="#" class="flex items-center gap-3 px-3 py-3 rounded-xl text-emerald-100 hover:bg-emerald-800/50 hover:text-white transition-colors group">

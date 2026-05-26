@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MonitorController;
 use App\Http\Controllers\ScannerController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\ActivityLogController;
 use Illuminate\Support\Facades\Route;
 
 // ============================
@@ -19,6 +21,20 @@ Route::get('/', function () {
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 
+// Web Scanner
+Route::get('/scanner', [ScannerController::class, 'index'])->name('scanner');
+Route::post('/api/launch-scanner', [ScannerController::class, 'launchScanner'])->name('api.launch_scanner');
+
+// ============================
+// Scanner API (No Session Auth, Requires API Key)
+// ============================
+Route::post('/api/scan', [ScannerController::class, 'scan'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->name('api.scan');
+Route::post('/api/scan-out', [ScannerController::class, 'scanOut'])
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class])
+    ->name('api.scan_out');
+
 // ============================
 // Protected Routes (Auth Required)
 // ============================
@@ -27,10 +43,12 @@ Route::middleware('auth')->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Scanner QR
-    Route::get('/scanner', [ScannerController::class, 'index'])->name('scanner');
-    Route::post('/api/scan', [ScannerController::class, 'scan'])->name('api.scan');
-    Route::post('/api/scan-out', [ScannerController::class, 'scanOut'])->name('api.scan_out');
+    // Live Monitor
+    Route::get('/monitor', [MonitorController::class, 'index'])->name('monitor');
+    Route::get('/api/monitor/latest', [MonitorController::class, 'fetchLatest'])->name('api.monitor.latest');
+    
+    // Log Aktivitas
+    Route::get('/logs', [ActivityLogController::class, 'index'])->name('logs.index');
 
     // Data Siswa (CRUD)
     Route::post('/classes', [StudentController::class, 'storeClass'])->name('classes.store');

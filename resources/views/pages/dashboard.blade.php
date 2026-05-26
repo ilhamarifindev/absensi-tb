@@ -121,7 +121,8 @@
                                 <tr class="bg-slate-50/50 text-slate-500 text-xs uppercase tracking-wider">
                                     <th class="px-6 py-4 font-medium">Siswa</th>
                                     <th class="px-6 py-4 font-medium">Kelas</th>
-                                    <th class="px-6 py-4 font-medium">Waktu Scan</th>
+                                    <th class="px-6 py-4 font-medium">Jam Masuk</th>
+                                    <th class="px-6 py-4 font-medium">Jam Pulang</th>
                                     <th class="px-6 py-4 font-medium">Status</th>
                                     <th class="px-6 py-4 font-medium text-right">Aksi</th>
                                 </tr>
@@ -139,7 +140,12 @@
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-slate-600">{{ $attendance->student->class_name }}</td>
-                                    <td class="px-6 py-4 text-slate-600 font-medium">{{ $attendance->scanned_at->format('h:i A') }}</td>
+                                    <td class="px-6 py-4 text-slate-600 font-medium">
+                                        {{ $attendance->masuk ? \Carbon\Carbon::parse($attendance->masuk)->format('h:i A') : '-' }}
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-600 font-medium">
+                                        {{ $attendance->pulang ? \Carbon\Carbon::parse($attendance->pulang)->format('h:i A') : '-' }}
+                                    </td>
                                     <td class="px-6 py-4">
                                         @php
                                             $badgeClasses = [
@@ -148,6 +154,7 @@
                                                 'izin' => 'bg-amber-50 text-amber-600 border-amber-200',
                                                 'sakit' => 'bg-blue-50 text-blue-600 border-blue-200',
                                                 'alpha' => 'bg-slate-50 text-slate-600 border-slate-200',
+                                                'pulang' => 'bg-indigo-50 text-indigo-600 border-indigo-200',
                                             ];
                                             $dotClasses = [
                                                 'hadir' => 'bg-emerald-500',
@@ -155,6 +162,7 @@
                                                 'izin' => 'bg-amber-500',
                                                 'sakit' => 'bg-blue-500',
                                                 'alpha' => 'bg-slate-500',
+                                                'pulang' => 'bg-indigo-500',
                                             ];
                                             $color = $badgeClasses[$attendance->status] ?? $badgeClasses['hadir'];
                                             $dotColor = $dotClasses[$attendance->status] ?? $dotClasses['hadir'];

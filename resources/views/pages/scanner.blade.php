@@ -27,35 +27,41 @@
             <!-- Simulated Camera Background Pattern -->
             <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
             
+            <!-- Scan Mode Toggle -->
+            <div class="absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-slate-900/80 p-1 rounded-full flex backdrop-blur-md border border-slate-700 shadow-xl">
+                <button @click="scanMode = 'masuk'" class="px-6 py-2 rounded-full text-sm font-bold transition-all tracking-wide" :class="scanMode === 'masuk' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'text-slate-400 hover:text-white'">MASUK</button>
+                <button @click="scanMode = 'pulang'" class="px-6 py-2 rounded-full text-sm font-bold transition-all tracking-wide" :class="scanMode === 'pulang' ? 'bg-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-slate-400 hover:text-white'">PULANG</button>
+            </div>
+
             <!-- Real Camera Div -->
-            <div id="qr-reader" class="w-full h-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden [&>video]:object-cover border-none bg-black"></div>
+            <div id="qr-reader" class="w-full h-full max-w-2xl max-h-[80vh] rounded-2xl overflow-hidden [&>video]:object-cover border-none bg-black mt-16 lg:mt-0"></div>
 
             <!-- Frame Overlay (Only visual) -->
             <div class="absolute inset-0 pointer-events-none flex items-center justify-center z-10" x-show="isScanning">
-                <div class="relative w-72 h-72 sm:w-96 sm:h-96">
+                <div class="relative w-72 h-72 sm:w-96 sm:h-96" :class="scanMode === 'masuk' ? 'text-emerald-500' : 'text-indigo-500'">
                     <!-- Frame Corners -->
-                    <div class="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 border-emerald-500 rounded-tl-xl"></div>
-                    <div class="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 border-emerald-500 rounded-tr-xl"></div>
-                    <div class="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 border-emerald-500 rounded-bl-xl"></div>
-                    <div class="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 border-emerald-500 rounded-br-xl"></div>
+                    <div class="absolute top-0 left-0 w-12 h-12 border-t-4 border-l-4 rounded-tl-xl" :class="scanMode === 'masuk' ? 'border-emerald-500' : 'border-indigo-500'"></div>
+                    <div class="absolute top-0 right-0 w-12 h-12 border-t-4 border-r-4 rounded-tr-xl" :class="scanMode === 'masuk' ? 'border-emerald-500' : 'border-indigo-500'"></div>
+                    <div class="absolute bottom-0 left-0 w-12 h-12 border-b-4 border-l-4 rounded-bl-xl" :class="scanMode === 'masuk' ? 'border-emerald-500' : 'border-indigo-500'"></div>
+                    <div class="absolute bottom-0 right-0 w-12 h-12 border-b-4 border-r-4 rounded-br-xl" :class="scanMode === 'masuk' ? 'border-emerald-500' : 'border-indigo-500'"></div>
                     
                     <!-- Neon Scan Line -->
-                    <div class="absolute top-0 left-0 w-full h-1 bg-emerald-400 shadow-[0_0_15px_3px_rgba(52,211,153,0.8)] rounded-full animate-[scan_2s_ease-in-out_infinite_alternate]"></div>
+                    <div class="absolute top-0 left-0 w-full h-1 rounded-full animate-[scan_2s_ease-in-out_infinite_alternate]" :class="scanMode === 'masuk' ? 'bg-emerald-400 shadow-[0_0_15px_3px_rgba(52,211,153,0.8)]' : 'bg-indigo-400 shadow-[0_0_15px_3px_rgba(99,102,241,0.8)]'"></div>
 
                     <!-- Overlay center clear -->
-                    <div class="absolute inset-0 bg-emerald-500/5 shadow-[inset_0_0_50px_rgba(16,185,129,0.1)] rounded-xl backdrop-blur-[1px]"></div>
+                    <div class="absolute inset-0 rounded-xl backdrop-blur-[1px]" :class="scanMode === 'masuk' ? 'bg-emerald-500/5 shadow-[inset_0_0_50px_rgba(16,185,129,0.1)]' : 'bg-indigo-500/5 shadow-[inset_0_0_50px_rgba(99,102,241,0.1)]'"></div>
                 </div>
             </div>
 
             <!-- Loading overlay when fetching API -->
-            <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center text-emerald-400" x-show="isLoading" x-transition>
+            <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-20 flex flex-col items-center justify-center" :class="scanMode === 'masuk' ? 'text-emerald-400' : 'text-indigo-400'" x-show="isLoading" x-transition>
                 <i data-lucide="loader-2" class="w-12 h-12 animate-spin mb-4"></i>
                 <p class="font-medium tracking-widest font-mono text-sm">MEMPROSES DATA...</p>
             </div>
 
             <!-- Controls (Mobile Bottom, Desktop Center Bottom) -->
             <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-4 z-30">
-                <button @click="toggleScanner()" class="w-14 h-14 rounded-full text-white flex items-center justify-center transition-all hover:scale-110 shadow-lg" :class="isScanning ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/50' : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/50'">
+                <button @click="toggleScanner()" class="w-14 h-14 rounded-full text-white flex items-center justify-center transition-all hover:scale-110 shadow-lg" :class="isScanning ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-500/50' : (scanMode === 'masuk' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/50' : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/50')">
                     <i data-lucide="power" class="w-6 h-6"></i>
                 </button>
                 <button @click="switchCamera()" class="w-14 h-14 rounded-full glass-dark text-white flex items-center justify-center hover:bg-white/10 transition-all hover:scale-110" x-show="cameras.length > 1">
@@ -175,9 +181,10 @@
             isScanning: false,
             isLoading: false,
             result: null,
+            scanMode: 'masuk', // 'masuk' or 'pulang'
             cameras: [],
             currentCameraId: null,
-            histories: [], // list of {id, name, success, message, time}
+            histories: [], // list of {id, name, success, message, time, mode}
             
             initScanner() {
                 // Get cameras
@@ -254,8 +261,9 @@
 
                 // Call API
                 const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const endpoint = this.scanMode === 'masuk' ? '/api/scan' : '/api/scan-out';
                 
-                fetch('/api/scan', {
+                fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -275,7 +283,7 @@
                             student_class: data.data.student.class_name,
                             time: data.data.time,
                         };
-                        this.addHistory(data.data.student.name, true, 'Berhasil Scan', data.data.time);
+                        this.addHistory(data.data.student.name, true, data.message, data.data.time);
                     } else {
                         this.result = {
                             success: false,

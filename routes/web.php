@@ -30,6 +30,7 @@ Route::middleware('auth')->group(function () {
     // Scanner QR
     Route::get('/scanner', [ScannerController::class, 'index'])->name('scanner');
     Route::post('/api/scan', [ScannerController::class, 'scan'])->name('api.scan');
+    Route::post('/api/scan-out', [ScannerController::class, 'scanOut'])->name('api.scan_out');
 
     // Data Siswa (CRUD)
     Route::post('/classes', [StudentController::class, 'storeClass'])->name('classes.store');

@@ -66,4 +66,65 @@ class ScannerController extends Controller
             ]
         ]);
     }
+
+    public function scanOut(Request $request)
+    {
+        $request->validate([
+            'qr_code' => 'required|string'
+        ]);
+
+        $student = Student::where('qr_code', $request->qr_code)->first();
+
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR Code tidak dikenali atau siswa tidak ditemukan.'
+            ], 404);
+        }
+
+        $today = Carbon::today();
+
+        // Pastikan sudah absen masuk (hadir / terlambat) hari ini
+        $attendanceIn = Attendance::where('student_id', $student->id)
+                                    ->whereDate('scanned_at', $today)
+                                    ->whereIn('status', ['hadir', 'terlambat'])
+                                    ->first();
+
+        if (!$attendanceIn) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa belum melakukan absensi masuk hari ini.'
+            ], 400);
+        }
+
+        // Cek apakah sudah absen pulang
+        $alreadyOut = Attendance::where('student_id', $student->id)
+                                    ->whereDate('scanned_at', $today)
+                                    ->where('status', 'pulang')
+                                    ->exists();
+
+        if ($alreadyOut) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Siswa sudah melakukan absensi pulang hari ini.'
+            ], 400);
+        }
+
+        $now = Carbon::now();
+        $attendanceOut = Attendance::create([
+            'student_id' => $student->id,
+            'status' => 'pulang',
+            'scanned_at' => $now,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Absensi pulang berhasil dicatat.',
+            'data' => [
+                'student' => $student,
+                'attendance' => $attendanceOut,
+                'time' => $now->format('h:i A')
+            ]
+        ]);
+    }
 }

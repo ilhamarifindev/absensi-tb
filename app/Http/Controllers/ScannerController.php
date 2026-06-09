@@ -16,16 +16,28 @@ class ScannerController extends Controller
 
     public function launchScanner()
     {
+        // Kill semua process Python yang mungkin masih berjalan di port 5000
+        // untuk mencegah multiple instance konflik kamera
+        $killVbsPath = base_path('kill_scanner.vbs');
+        $killVbsCode = "Set WshShell = CreateObject(\"WScript.Shell\")\n" .
+                       "WshShell.Run \"cmd /c FOR /F \"\"tokens=5\"\" %a IN ('netstat -aon ^| findstr :5000 ^| findstr LISTENING') DO taskkill /F /PID %a > NUL 2>&1\", 0, True\n" .
+                       "WScript.Sleep 1000";
+        file_put_contents($killVbsPath, $killVbsCode);
+        pclose(popen('wscript "' . $killVbsPath . '"', 'r'));
+
+        // Tunggu 1.5 detik agar port benar-benar bebas
+        usleep(1500000);
+
         // Gunakan VBScript untuk menjalankan Python secara tersembunyi (tanpa memunculkan console)
         $scriptPath = base_path('scanner.py');
         $vbsPath = base_path('launch_hidden.vbs');
-        
+
         $vbsCode = "Set WshShell = CreateObject(\"WScript.Shell\")\n" .
-                   "WshShell.Run \"cmd /c python \"\"\" & WScript.Arguments(0) & \"\"\" > NUL 2>&1\", 0, False";
+                   "WshShell.Run \"cmd /c python \"\"\" & WScript.Arguments(0) & \"\"\"\", 0, False";
         file_put_contents($vbsPath, $vbsCode);
-        
+
         pclose(popen('wscript "' . $vbsPath . '" "' . $scriptPath . '"', 'r'));
-        
+
         return response()->json(['success' => true, 'message' => 'Scanner Python diluncurkan!']);
     }
 

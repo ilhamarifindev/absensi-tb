@@ -212,7 +212,7 @@
 
             launchScanner() {
                 this.isLaunching = true;
-                
+
                 // Panggil Laravel API untuk menjalankan script Python
                 fetch('/api/launch-scanner', {
                     method: 'POST',
@@ -223,13 +223,31 @@
                 })
                 .then(res => res.json())
                 .then(data => {
-                    // Tunggu sebentar sampai Flask server nyala
-                    setTimeout(() => {
-                        this.isLaunching = false;
-                        this.isCameraOn = true;
-                        this.videoSrc = 'http://127.0.0.1:5000/video_feed?' + new Date().getTime();
-                        this.setMode(this.scanMode);
-                    }, 3000);
+                    // Poll /health sampai Flask benar-benar siap (max 10 detik)
+                    let attempts = 0;
+                    const maxAttempts = 20; // 20 x 500ms = 10 detik
+                    const poll = setInterval(() => {
+                        attempts++;
+                        fetch('http://127.0.0.1:5000/health')
+                            .then(r => r.json())
+                            .then(h => {
+                                if (h.ok) {
+                                    clearInterval(poll);
+                                    this.isLaunching = false;
+                                    this.isCameraOn = true;
+                                    this.videoSrc = 'http://127.0.0.1:5000/video_feed?' + new Date().getTime();
+                                    this.setMode(this.scanMode);
+                                }
+                            })
+                            .catch(() => {
+                                // Server belum ready, lanjut polling
+                                if (attempts >= maxAttempts) {
+                                    clearInterval(poll);
+                                    this.isLaunching = false;
+                                    alert("Server Python tidak merespons. Pastikan Python & dependensi terinstall dengan benar.");
+                                }
+                            });
+                    }, 500);
                 })
                 .catch(err => {
                     console.error(err);

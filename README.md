@@ -61,4 +61,4 @@ Platform absensi digital modern yang dirancang khusus untuk mempermudah pemantau
    ```
 
 ## Lisensi
-Hak Cipta &copy; 2026 SMK Taruna Bangsa. All rights reserved.
+Hak Cipta &copy; 2026 Muhammad Ilham Arifin Putra. All rights reserved.

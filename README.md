@@ -22,13 +22,13 @@ Platform absensi digital modern yang dirancang khusus untuk mempermudah pemantau
 ### 4. Rekap Absensi
 ![Rekap Absensi](docs/images/rekap-absensi.png)
 
-### 5. Fitur Lainnya 1 (Silakan Ubah Judul)
+### 5. Data Siswa
 ![Fitur 1](docs/images/fitur-5.png)
 
-### 6. Fitur Lainnya 2 (Silakan Ubah Judul)
+### 6. Scanner
 ![Fitur 2](docs/images/fitur-6.png)
 
-### 7. Fitur Lainnya 3 (Silakan Ubah Judul)
+### 7. Log Aktivitas
 ![Fitur 3](docs/images/fitur-7.png)
 
 ## Instalasi (Development)

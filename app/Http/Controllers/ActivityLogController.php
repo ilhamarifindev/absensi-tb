@@ -20,9 +20,9 @@ class ActivityLogController extends Controller
 
         if ($search) {
             $query->whereHas('student', function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('nis', 'ilike', "%{$search}%")
-                  ->orWhere('class_name', 'ilike', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('nis', 'like', "%{$search}%")
+                    ->orWhere('class_name', 'like', "%{$search}%");
             });
         }
 

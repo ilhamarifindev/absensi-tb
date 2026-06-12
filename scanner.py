@@ -5,7 +5,10 @@ import requests
 from pyzbar.pyzbar import decode
 import time
 import os
+import sys
+import signal
 import threading
+import atexit
 import numpy as np
 from flask import Flask, Response, request, jsonify
 from flask_cors import CORS
@@ -52,6 +55,32 @@ class ScannerState:
 
 state = ScannerState()
 cap = None
+
+
+def release_camera():
+    """Release kamera secara global agar tidak terkunci."""
+    global cap
+    if cap is not None:
+        try:
+            cap.release()
+            print("[OK] Kamera dilepas dengan aman.")
+        except Exception:
+            pass
+        cap = None
+
+
+def cleanup_and_exit(signum=None, frame=None):
+    """Handler untuk signal/atexit - pastikan kamera selalu dilepas."""
+    print("[INFO] Membersihkan resource sebelum keluar...")
+    state.camera_active = False
+    release_camera()
+    sys.exit(0)
+
+
+# Daftarkan handler agar kamera selalu dilepas saat proses mati
+atexit.register(release_camera)
+signal.signal(signal.SIGTERM, cleanup_and_exit)
+signal.signal(signal.SIGINT, cleanup_and_exit)
 
 
 def find_camera():
@@ -135,128 +164,133 @@ def send_scan_request(qr_data, mode):
 def generate_frames():
     global cap
 
-    # Lepas kamera lama jika ada
-    if cap is not None:
-        cap.release()
+    try:
+        # Lepas kamera lama jika ada
+        if cap is not None:
+            cap.release()
 
-    # Coba buka kamera
-    cap = find_camera()
+        # Coba buka kamera
+        cap = find_camera()
 
-    if cap is None or not cap.isOpened():
-        print("[ERROR] Tidak bisa membuka kamera. Menampilkan frame error.")
-        state.camera_error = True
-        # Terus stream error frame agar browser tidak error
-        while state.camera_active:
-            error_frame = make_error_frame()
-            ret, buffer = cv2.imencode('.jpg', error_frame)
-            if ret:
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
-            time.sleep(0.5)
-        return
-
-    state.camera_error = False
-    retry_count = 0
-
-    while state.camera_active:
-        success, frame = cap.read()
-        if not success:
-            print("Gagal membaca frame kamera, mencoba lagi...")
-            time.sleep(0.5)
-            retry_count += 1
-            if retry_count > 10:
-                print("Kamera tidak merespon setelah 10 percobaan. Menampilkan frame error.")
-                # Stream error frame dan coba re-init kamera
-                error_frame = make_error_frame("KONEKSI KAMERA TERPUTUS")
+        if cap is None or not cap.isOpened():
+            print("[ERROR] Tidak bisa membuka kamera. Menampilkan frame error.")
+            state.camera_error = True
+            # Terus stream error frame agar browser tidak error
+            while state.camera_active:
+                error_frame = make_error_frame()
                 ret, buffer = cv2.imencode('.jpg', error_frame)
                 if ret:
                     yield (b'--frame\r\n'
                            b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+                time.sleep(0.5)
+            return
 
-                # Coba buka ulang kamera
-                cap.release()
-                time.sleep(2)
-                cap = find_camera()
-                retry_count = 0
-                if cap is None:
-                    time.sleep(3)
-            continue
-
+        state.camera_error = False
         retry_count = 0
 
-        # Decode QR code
-        decoded_objects = decode(frame)
-        current_time = time.time()
+        while state.camera_active:
+            success, frame = cap.read()
+            if not success:
+                print("Gagal membaca frame kamera, mencoba lagi...")
+                time.sleep(0.5)
+                retry_count += 1
+                if retry_count > 10:
+                    print("Kamera tidak merespon setelah 10 percobaan. Menampilkan frame error.")
+                    # Stream error frame dan coba re-init kamera
+                    error_frame = make_error_frame("KONEKSI KAMERA TERPUTUS")
+                    ret, buffer = cv2.imencode('.jpg', error_frame)
+                    if ret:
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
-        for obj in decoded_objects:
-            qr_data = obj.data.decode('utf-8')
+                    # Coba buka ulang kamera
+                    cap.release()
+                    time.sleep(2)
+                    cap = find_camera()
+                    retry_count = 0
+                    if cap is None:
+                        time.sleep(3)
+                continue
 
-            # Gambar kotak di sekitar QR code
-            pts = obj.polygon
-            if len(pts) == 4:
-                pts = [(p.x, p.y) for p in pts]
-                cv2.polylines(frame, [np.array(pts, np.int32)], True, (0, 255, 0), 3)
+            retry_count = 0
 
-            # Cooldown scan
+            # Decode QR code
+            decoded_objects = decode(frame)
+            current_time = time.time()
+
+            for obj in decoded_objects:
+                qr_data = obj.data.decode('utf-8')
+
+                # Gambar kotak di sekitar QR code
+                pts = obj.polygon
+                if len(pts) == 4:
+                    pts = [(p.x, p.y) for p in pts]
+                    cv2.polylines(frame, [np.array(pts, np.int32)], True, (0, 255, 0), 3)
+
+                # Cooldown scan
+                with state.lock:
+                    last_time = state.last_scans.get(qr_data, 0)
+                    if current_time - last_time > COOLDOWN_TIME and not state.is_processing:
+                        state.last_scans[qr_data] = current_time
+                        state.is_processing = True
+                        state.processing_text = qr_data
+
+                        try:
+                            import winsound
+                            winsound.Beep(1500, 50)
+                        except:
+                            pass
+
+                        threading.Thread(
+                            target=send_scan_request,
+                            args=(qr_data, state.mode),
+                            daemon=True
+                        ).start()
+
+            # Overlay "MEMPROSES"
             with state.lock:
-                last_time = state.last_scans.get(qr_data, 0)
-                if current_time - last_time > COOLDOWN_TIME and not state.is_processing:
-                    state.last_scans[qr_data] = current_time
-                    state.is_processing = True
-                    state.processing_text = qr_data
+                if state.is_processing:
+                    overlay = frame.copy()
+                    cv2.rectangle(overlay, (0, 0), (frame.shape[1], frame.shape[0]), (0, 0, 0), -1)
+                    cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
+                    text = "MEMPROSES..."
+                    font = cv2.FONT_HERSHEY_DUPLEX
+                    text_size = cv2.getTextSize(text, font, 1.2, 2)[0]
+                    text_x = (frame.shape[1] - text_size[0]) // 2
+                    text_y = (frame.shape[0] + text_size[1]) // 2
+                    cv2.putText(frame, text, (text_x, text_y), font, 1.2, (0, 255, 255), 2)
+                    cv2.putText(frame, state.processing_text,
+                                (text_x + 20, text_y + 40),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
-                    try:
-                        import winsound
-                        winsound.Beep(1500, 50)
-                    except:
-                        pass
-
-                    threading.Thread(
-                        target=send_scan_request,
-                        args=(qr_data, state.mode),
-                        daemon=True
-                    ).start()
-
-        # Overlay "MEMPROSES"
-        with state.lock:
-            if state.is_processing:
-                overlay = frame.copy()
-                cv2.rectangle(overlay, (0, 0), (frame.shape[1], frame.shape[0]), (0, 0, 0), -1)
-                cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
-                text = "MEMPROSES..."
-                font = cv2.FONT_HERSHEY_DUPLEX
-                text_size = cv2.getTextSize(text, font, 1.2, 2)[0]
-                text_x = (frame.shape[1] - text_size[0]) // 2
-                text_y = (frame.shape[0] + text_size[1]) // 2
-                cv2.putText(frame, text, (text_x, text_y), font, 1.2, (0, 255, 255), 2)
-                cv2.putText(frame, state.processing_text,
-                            (text_x + 20, text_y + 40),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
-
-            elif current_time < state.result_timeout:
-                overlay = frame.copy()
-                cv2.rectangle(overlay, (0, frame.shape[0] - 80),
-                              (frame.shape[1], frame.shape[0]), (0, 0, 0), -1)
-                cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
-                font = cv2.FONT_HERSHEY_SIMPLEX
-                font_scale = 0.7
-                text_size = cv2.getTextSize(state.result_text, font, font_scale, 2)[0]
-                if text_size[0] > frame.shape[1] - 20:
-                    font_scale = 0.55
+                elif current_time < state.result_timeout:
+                    overlay = frame.copy()
+                    cv2.rectangle(overlay, (0, frame.shape[0] - 80),
+                                  (frame.shape[1], frame.shape[0]), (0, 0, 0), -1)
+                    cv2.addWeighted(overlay, 0.7, frame, 0.3, 0, frame)
+                    font = cv2.FONT_HERSHEY_SIMPLEX
+                    font_scale = 0.7
                     text_size = cv2.getTextSize(state.result_text, font, font_scale, 2)[0]
-                text_x = max(10, (frame.shape[1] - text_size[0]) // 2)
-                text_y = frame.shape[0] - 30
-                cv2.putText(frame, state.result_text, (text_x, text_y),
-                            font, font_scale, state.result_color, 2)
+                    if text_size[0] > frame.shape[1] - 20:
+                        font_scale = 0.55
+                        text_size = cv2.getTextSize(state.result_text, font, font_scale, 2)[0]
+                    text_x = max(10, (frame.shape[1] - text_size[0]) // 2)
+                    text_y = frame.shape[0] - 30
+                    cv2.putText(frame, state.result_text, (text_x, text_y),
+                                font, font_scale, state.result_color, 2)
 
-        # Encode frame ke JPEG
-        ret, buffer = cv2.imencode('.jpg', frame)
-        if ret:
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            # Encode frame ke JPEG
+            ret, buffer = cv2.imencode('.jpg', frame)
+            if ret:
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
-    if cap:
-        cap.release()
+    finally:
+        # Pastikan kamera SELALU dilepas, apapun yang terjadi
+        print("[INFO] Generator berhenti, melepaskan kamera...")
+        if cap is not None:
+            cap.release()
+            cap = None
 
 
 @app.route('/video_feed')
@@ -291,9 +325,13 @@ def health():
 
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
+    """Matikan server dengan melepaskan kamera terlebih dahulu."""
+    print("[INFO] Shutdown diminta - melepaskan kamera...")
     state.camera_active = False
-    os._exit(0)
-    return jsonify({"success": True})
+    release_camera()
+    # Gunakan threading untuk shutdown agar response hin bisa dikirim dulu
+    threading.Thread(target=lambda: os._exit(0), daemon=True).start()
+    return jsonify({"success": True, "message": "Scanner dimatikan."})
 
 
 def main():
@@ -302,7 +340,8 @@ def main():
         app.run(host='127.0.0.1', port=5000, threaded=True, use_reloader=False)
     except OSError as e:
         print(f"[FATAL] Port 5000 sudah digunakan: {e}")
-        os._exit(1)
+        release_camera()
+        sys.exit(1)
 
 
 if __name__ == '__main__':

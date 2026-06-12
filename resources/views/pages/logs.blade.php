@@ -7,9 +7,11 @@
 
     <div class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50 w-full transition-all duration-300">
         <!-- Top Navbar -->
-        <header class="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
+        <header
+            class="bg-white border-b border-slate-200 h-20 flex items-center justify-between px-6 shrink-0 z-10 shadow-sm">
             <div class="flex items-center gap-4">
-                <button @click="sidebarOpen = !sidebarOpen" class="md:hidden text-slate-500 hover:text-emerald-600 transition-colors">
+                <button @click="sidebarOpen = !sidebarOpen"
+                    class="md:hidden text-slate-500 hover:text-emerald-600 transition-colors">
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
                 <div>
@@ -23,7 +25,7 @@
                     <p class="text-xs text-slate-500">Administrator</p>
                 </div>
                 <div class="w-10 h-10 rounded-full bg-emerald-100 border-2 border-emerald-200 overflow-hidden">
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=10b981&color=fff" alt="Admin" class="w-full h-full object-cover">
+                    <x-avatar :name="Auth::user()->name" size="w-10 h-10" bg="bg-emerald-500" text="text-white" />
                 </div>
             </div>
         </header>
@@ -95,20 +97,23 @@
                     <form method="GET" action="{{ route('logs.index') }}" class="flex flex-col md:flex-row gap-4 items-end">
                         <div class="w-full md:w-auto">
                             <label class="block text-xs font-medium text-slate-500 mb-1">Tanggal</label>
-                            <input type="date" name="date" value="{{ $date }}" 
-                                   class="w-full px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-sm outline-none">
+                            <input type="date" name="date" value="{{ $date }}"
+                                class="w-full px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-sm outline-none">
                         </div>
                         <div class="w-full md:w-auto flex-1">
                             <label class="block text-xs font-medium text-slate-500 mb-1">Cari Siswa</label>
                             <div class="relative">
-                                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                                <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama, NIS, kelas..." 
-                                       class="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-sm outline-none">
+                                <i data-lucide="search"
+                                    class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" name="search" value="{{ $search }}"
+                                    placeholder="Cari nama, NIS, kelas..."
+                                    class="w-full pl-9 pr-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-sm outline-none">
                             </div>
                         </div>
                         <div class="w-full md:w-auto">
                             <label class="block text-xs font-medium text-slate-500 mb-1">Status</label>
-                            <select name="status" class="w-full px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-sm outline-none appearance-none">
+                            <select name="status"
+                                class="w-full px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all text-sm outline-none appearance-none">
                                 <option value="">Semua Status</option>
                                 <option value="hadir" {{ $status === 'hadir' ? 'selected' : '' }}>Hadir</option>
                                 <option value="terlambat" {{ $status === 'terlambat' ? 'selected' : '' }}>Terlambat</option>
@@ -119,10 +124,13 @@
                             </select>
                         </div>
                         <div class="w-full md:w-auto flex gap-2">
-                            <button type="submit" class="flex-1 md:flex-none px-5 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors">
+                            <button type="submit"
+                                class="flex-1 md:flex-none px-5 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition-colors">
                                 Terapkan
                             </button>
-                            <a href="{{ route('logs.index') }}" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center" title="Reset Filter">
+                            <a href="{{ route('logs.index') }}"
+                                class="px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center"
+                                title="Reset Filter">
                                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                             </a>
                         </div>
@@ -151,67 +159,75 @@
                             </thead>
                             <tbody class="text-sm divide-y divide-slate-100">
                                 @forelse ($logs as $index => $log)
-                                @php
-                                    $badgeClasses = [
-                                        'hadir' => 'bg-emerald-50 text-emerald-600 border-emerald-200',
-                                        'terlambat' => 'bg-rose-50 text-rose-600 border-rose-200',
-                                        'izin' => 'bg-amber-50 text-amber-600 border-amber-200',
-                                        'sakit' => 'bg-blue-50 text-blue-600 border-blue-200',
-                                        'alpha' => 'bg-slate-50 text-slate-600 border-slate-200',
-                                        'pulang' => 'bg-indigo-50 text-indigo-600 border-indigo-200',
-                                    ];
-                                    $dotClasses = [
-                                        'hadir' => 'bg-emerald-500',
-                                        'terlambat' => 'bg-rose-500',
-                                        'izin' => 'bg-amber-500',
-                                        'sakit' => 'bg-blue-500',
-                                        'alpha' => 'bg-slate-500',
-                                        'pulang' => 'bg-indigo-500',
-                                    ];
-                                    $iconMap = [
-                                        'hadir' => 'log-in',
-                                        'terlambat' => 'clock',
-                                        'izin' => 'mail',
-                                        'sakit' => 'thermometer',
-                                        'alpha' => 'x-circle',
-                                        'pulang' => 'log-out',
-                                    ];
-                                    $color = $badgeClasses[$log->status] ?? $badgeClasses['hadir'];
-                                    $dotColor = $dotClasses[$log->status] ?? $dotClasses['hadir'];
-                                    $icon = $iconMap[$log->status] ?? 'activity';
-                                @endphp
-                                <tr class="hover:bg-slate-50 transition-colors group">
-                                    <td class="px-6 py-4 text-slate-400 text-xs">{{ $logs->firstItem() + $index }}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-3">
-                                            <img src="https://ui-avatars.com/api/?name={{ urlencode($log->student->name ?? 'X') }}&background=f1f5f9" class="w-10 h-10 rounded-full" alt="{{ $log->student->name ?? '-' }}">
-                                            <div>
-                                                <p class="font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors">{{ $log->student->name ?? '-' }}</p>
-                                                <p class="text-xs text-slate-500">NIS: {{ $log->student->nis ?? '-' }}</p>
+                                    @php
+                                        $badgeClasses = [
+                                            'hadir' => 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                                            'terlambat' => 'bg-rose-50 text-rose-600 border-rose-200',
+                                            'izin' => 'bg-amber-50 text-amber-600 border-amber-200',
+                                            'sakit' => 'bg-blue-50 text-blue-600 border-blue-200',
+                                            'alpha' => 'bg-slate-50 text-slate-600 border-slate-200',
+                                            'pulang' => 'bg-indigo-50 text-indigo-600 border-indigo-200',
+                                        ];
+                                        $dotClasses = [
+                                            'hadir' => 'bg-emerald-500',
+                                            'terlambat' => 'bg-rose-500',
+                                            'izin' => 'bg-amber-500',
+                                            'sakit' => 'bg-blue-500',
+                                            'alpha' => 'bg-slate-500',
+                                            'pulang' => 'bg-indigo-500',
+                                        ];
+                                        $iconMap = [
+                                            'hadir' => 'log-in',
+                                            'terlambat' => 'clock',
+                                            'izin' => 'mail',
+                                            'sakit' => 'thermometer',
+                                            'alpha' => 'x-circle',
+                                            'pulang' => 'log-out',
+                                        ];
+                                        $color = $badgeClasses[$log->status] ?? $badgeClasses['hadir'];
+                                        $dotColor = $dotClasses[$log->status] ?? $dotClasses['hadir'];
+                                        $icon = $iconMap[$log->status] ?? 'activity';
+                                    @endphp
+                                    <tr class="hover:bg-slate-50 transition-colors group">
+                                        <td class="px-6 py-4 text-slate-400 text-xs">{{ $logs->firstItem() + $index }}</td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <x-avatar :name="$log->student->name ?? 'X'" size="w-10 h-10" bg="bg-slate-100"
+                                                    text="text-slate-600" />
+                                                <div>
+                                                    <p
+                                                        class="font-semibold text-slate-800 group-hover:text-emerald-600 transition-colors">
+                                                        {{ $log->student->name ?? '-' }}</p>
+                                                    <p class="text-xs text-slate-500">NIS: {{ $log->student->nis ?? '-' }}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-slate-600">{{ $log->student->class_name ?? '-' }}</td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex items-center gap-2">
-                                            <i data-lucide="{{ $icon }}" class="w-4 h-4 {{ str_replace('bg-', 'text-', $dotColor) }}"></i>
-                                            <span class="text-slate-800 font-medium">{{ $log->scanned_at->format('H:i:s') }}</span>
-                                            <span class="text-xs text-slate-400">{{ $log->scanned_at->diffForHumans() }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border {{ $color }} capitalize">
-                                            <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span> {{ $log->status }}
-                                        </span>
-                                    </td>
-                                </tr>
+                                        </td>
+                                        <td class="px-6 py-4 text-slate-600">{{ $log->student->class_name ?? '-' }}</td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-2">
+                                                <i data-lucide="{{ $icon }}"
+                                                    class="w-4 h-4 {{ str_replace('bg-', 'text-', $dotColor) }}"></i>
+                                                <span
+                                                    class="text-slate-800 font-medium">{{ $log->scanned_at->format('H:i:s') }}</span>
+                                                <span
+                                                    class="text-xs text-slate-400">{{ $log->scanned_at->diffForHumans() }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span
+                                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border {{ $color }} capitalize">
+                                                <span class="w-1.5 h-1.5 rounded-full {{ $dotColor }}"></span>
+                                                {{ $log->status }}
+                                            </span>
+                                        </td>
+                                    </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="5" class="px-6 py-12 text-center text-slate-500">
-                                        <i data-lucide="scroll-text" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
-                                        <p class="font-medium">Belum ada aktivitas scan pada tanggal ini.</p>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+                                            <i data-lucide="scroll-text" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
+                                            <p class="font-medium">Belum ada aktivitas scan pada tanggal ini.</p>
+                                        </td>
+                                    </tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -219,32 +235,39 @@
 
                     <!-- Pagination -->
                     @if($logs->hasPages())
-                    <div class="p-4 border-t border-slate-100 flex items-center justify-between">
-                        <span class="text-sm text-slate-500">
-                            Menampilkan {{ $logs->firstItem() }}-{{ $logs->lastItem() }} dari {{ $logs->total() }} data
-                        </span>
-                        <div class="flex gap-1">
-                            @if($logs->onFirstPage())
-                                <span class="px-3 py-1 rounded border border-slate-200 text-slate-400 disabled:opacity-50"><i data-lucide="chevron-left" class="w-4 h-4"></i></span>
-                            @else
-                                <a href="{{ $logs->previousPageUrl() }}" class="px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50"><i data-lucide="chevron-left" class="w-4 h-4"></i></a>
-                            @endif
-
-                            @foreach($logs->getUrlRange(max(1, $logs->currentPage() - 2), min($logs->lastPage(), $logs->currentPage() + 2)) as $page => $url)
-                                @if($page == $logs->currentPage())
-                                    <span class="px-3 py-1 rounded bg-emerald-600 text-white font-medium">{{ $page }}</span>
+                        <div class="p-4 border-t border-slate-100 flex items-center justify-between">
+                            <span class="text-sm text-slate-500">
+                                Menampilkan {{ $logs->firstItem() }}-{{ $logs->lastItem() }} dari {{ $logs->total() }} data
+                            </span>
+                            <div class="flex gap-1">
+                                @if($logs->onFirstPage())
+                                    <span class="px-3 py-1 rounded border border-slate-200 text-slate-400 disabled:opacity-50"><i
+                                            data-lucide="chevron-left" class="w-4 h-4"></i></span>
                                 @else
-                                    <a href="{{ $url }}" class="px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">{{ $page }}</a>
+                                    <a href="{{ $logs->previousPageUrl() }}"
+                                        class="px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50"><i
+                                            data-lucide="chevron-left" class="w-4 h-4"></i></a>
                                 @endif
-                            @endforeach
 
-                            @if($logs->hasMorePages())
-                                <a href="{{ $logs->nextPageUrl() }}" class="px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50"><i data-lucide="chevron-right" class="w-4 h-4"></i></a>
-                            @else
-                                <span class="px-3 py-1 rounded border border-slate-200 text-slate-400"><i data-lucide="chevron-right" class="w-4 h-4"></i></span>
-                            @endif
+                                @foreach($logs->getUrlRange(max(1, $logs->currentPage() - 2), min($logs->lastPage(), $logs->currentPage() + 2)) as $page => $url)
+                                    @if($page == $logs->currentPage())
+                                        <span class="px-3 py-1 rounded bg-emerald-600 text-white font-medium">{{ $page }}</span>
+                                    @else
+                                        <a href="{{ $url }}"
+                                            class="px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 font-medium">{{ $page }}</a>
+                                    @endif
+                                @endforeach
+
+                                @if($logs->hasMorePages())
+                                    <a href="{{ $logs->nextPageUrl() }}"
+                                        class="px-3 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50"><i
+                                            data-lucide="chevron-right" class="w-4 h-4"></i></a>
+                                @else
+                                    <span class="px-3 py-1 rounded border border-slate-200 text-slate-400"><i
+                                            data-lucide="chevron-right" class="w-4 h-4"></i></span>
+                                @endif
+                            </div>
                         </div>
-                    </div>
                     @endif
                 </div>
 

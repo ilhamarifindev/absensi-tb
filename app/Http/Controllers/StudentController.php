@@ -29,8 +29,8 @@ class StudentController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('nis', 'ilike', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('nis', 'like', "%{$search}%");
             });
         }
 
@@ -65,9 +65,9 @@ class StudentController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nis'          => 'required|string|unique:students,nis',
-            'name'         => 'required|string|max:255',
-            'class_name'   => 'required|string|max:100',
+            'nis' => 'required|string|unique:students,nis',
+            'name' => 'required|string|max:255',
+            'class_name' => 'required|string|max:100',
             'parent_phone' => 'nullable|string|max:20',
         ]);
 
@@ -86,9 +86,9 @@ class StudentController extends Controller
     public function update(Request $request, Student $student)
     {
         $validated = $request->validate([
-            'nis'          => 'required|string|unique:students,nis,' . $student->id,
-            'name'         => 'required|string|max:255',
-            'class_name'   => 'required|string|max:100',
+            'nis' => 'required|string|unique:students,nis,' . $student->id,
+            'name' => 'required|string|max:255',
+            'class_name' => 'required|string|max:100',
             'parent_phone' => 'nullable|string|max:20',
         ]);
 
@@ -118,11 +118,11 @@ class StudentController extends Controller
         // We use simple-qrcode to generate a PNG or SVG.
         // Let's generate an SVG string
         $qrCode = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(300)
-                    ->margin(2)
-                    ->generate($student->qr_code);
+            ->margin(2)
+            ->generate($student->qr_code);
 
         return response($qrCode)
-                ->header('Content-Type', 'image/svg+xml');
+            ->header('Content-Type', 'image/svg+xml');
     }
 
     /**
@@ -138,13 +138,13 @@ class StudentController extends Controller
         try {
             $targetClass = $request->input('target_class');
             \Maatwebsite\Excel\Facades\Excel::import(new \App\Imports\StudentsImport($targetClass), $request->file('file'));
-            
+
             $msg = 'Data siswa berhasil diimport. NIS yang duplikat dilewati.';
             if ($targetClass) {
                 $msg = "Data siswa untuk kelas {$targetClass} berhasil diimport.";
                 return redirect()->route('students.index', ['class' => $targetClass])->with('success', $msg);
             }
-            
+
             return redirect()->route('students.index')->with('success', $msg);
         } catch (\Exception $e) {
             $redirect = redirect()->route('students.index');

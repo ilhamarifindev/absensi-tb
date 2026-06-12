@@ -1,25 +1,21 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
     public function up(): void
     {
-        DB::statement('ALTER TABLE attendances DROP CONSTRAINT IF EXISTS attendances_status_check');
-        DB::statement("ALTER TABLE attendances ADD CONSTRAINT attendances_status_check CHECK (status::text = ANY (ARRAY['hadir'::character varying, 'izin'::character varying, 'sakit'::character varying, 'alpha'::character varying, 'terlambat'::character varying, 'pulang'::character varying]::text[]))");
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha', 'terlambat', 'pulang'])->default('hadir')->change();
+        });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        DB::statement('ALTER TABLE attendances DROP CONSTRAINT IF EXISTS attendances_status_check');
-        DB::statement("ALTER TABLE attendances ADD CONSTRAINT attendances_status_check CHECK (status::text = ANY (ARRAY['hadir'::character varying, 'izin'::character varying, 'sakit'::character varying, 'alpha'::character varying, 'terlambat'::character varying]::text[]))");
+        Schema::table('attendances', function (Blueprint $table) {
+            $table->enum('status', ['hadir', 'izin', 'sakit', 'alpha', 'terlambat'])->default('hadir')->change();
+        });
     }
 };

@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class AttendanceController extends Controller
 {
@@ -17,44 +18,74 @@ class AttendanceController extends Controller
 
         // Mode 1: Detailed View for a Specific Class
         if ($selectedClass) {
-            $query = Student::where('class_name', $selectedClass)->with(['attendances' => function ($q) use ($date) {
-                $q->whereDate('scanned_at', $date);
-            }]);
+            $query = Student::where('class_name', $selectedClass)->with([
+                'attendances' => function ($q) use ($date) {
+                    $q->whereDate('scanned_at', $date);
+                }
+            ]);
 
             if ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('name', 'ilike', "%{$search}%")
-                      ->orWhere('nis', 'ilike', "%{$search}%");
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('nis', 'like', "%{$search}%");
                 });
             }
 
-            $students = $query->orderBy('name')->get(); // Get all students in the class without pagination for easier overview
-            
+            $students = $query->orderBy('name')->get();
+
             return view('pages.attendances', compact('students', 'date', 'selectedClass'));
         }
 
-        // Mode 2: Overview of All Classes
+        // Mode 2: Overview of All Classes (OPTIMIZED - minimal queries)
         $classRooms = \App\Models\ClassRoom::orderBy('name')->get();
-        
-        $classStats = [];
-        
-        foreach ($classRooms as $room) {
-            $totalStudents = Student::where('class_name', $room->name)->count();
-            
-            if ($totalStudents === 0) continue; // Skip classes with no students
+        $classNames = $classRooms->pluck('name')->toArray();
 
-            // Get attendances for this class on this date
-            $attendances = Attendance::whereHas('student', function($q) use ($room) {
-                $q->where('class_name', $room->name);
-            })->whereDate('scanned_at', $date)->get();
-            
-            $hadir = $attendances->where('status', 'hadir')->count();
-            $terlambat = $attendances->where('status', 'terlambat')->count();
-            $izin = $attendances->where('status', 'izin')->count();
-            $sakit = $attendances->where('status', 'sakit')->count();
-            $alphaRecorded = $attendances->where('status', 'alpha')->count();
-            
-            // Alpha is explicitly recorded alpha + students who haven't scanned
+        // Query 1: Get student counts per class in ONE query (cached 30s)
+        $studentCounts = Cache::remember('student_counts_by_class', 30, function () use ($classNames) {
+            return Student::selectRaw('class_name, COUNT(*) as total')
+                ->whereIn('class_name', $classNames)
+                ->groupBy('class_name')
+                ->pluck('total', 'class_name')
+                ->toArray();
+        });
+
+        // Query 2: Get attendance stats per class in ONE query (cached 30s)
+        $cacheKey = 'attendance_class_stats_' . $date;
+        $attendanceStats = Cache::remember($cacheKey, 30, function () use ($classNames, $date) {
+            return Attendance::selectRaw("
+                    students.class_name,
+                    COUNT(CASE WHEN attendances.status = 'hadir' THEN 1 END) as hadir,
+                    COUNT(CASE WHEN attendances.status = 'terlambat' THEN 1 END) as terlambat,
+                    COUNT(CASE WHEN attendances.status = 'izin' THEN 1 END) as izin,
+                    COUNT(CASE WHEN attendances.status = 'sakit' THEN 1 END) as sakit
+                ")
+                ->join('students', 'attendances.student_id', '=', 'students.id')
+                ->whereIn('students.class_name', $classNames)
+                ->whereDate('attendances.scanned_at', $date)
+                ->groupBy('students.class_name')
+                ->get()
+                ->keyBy('class_name')
+                ->toArray();
+        });
+
+        // Build stats from in-memory data (no more queries)
+        $classStats = [];
+        foreach ($classRooms as $room) {
+            $totalStudents = $studentCounts[$room->name] ?? 0;
+            if ($totalStudents === 0)
+                continue;
+
+            $stats = $attendanceStats[$room->name] ?? [
+                'hadir' => 0,
+                'terlambat' => 0,
+                'izin' => 0,
+                'sakit' => 0
+            ];
+
+            $hadir = (int) ($stats['hadir'] ?? 0);
+            $terlambat = (int) ($stats['terlambat'] ?? 0);
+            $izin = (int) ($stats['izin'] ?? 0);
+            $sakit = (int) ($stats['sakit'] ?? 0);
             $alpha = $totalStudents - ($hadir + $terlambat + $izin + $sakit);
 
             $classStats[] = [
@@ -88,8 +119,8 @@ class AttendanceController extends Controller
         $status = $validated['status'];
 
         $attendance = Attendance::where('student_id', $studentId)
-                        ->whereDate('scanned_at', $date)
-                        ->first();
+            ->whereDate('scanned_at', $date)
+            ->first();
 
         if ($status === 'alpha') {
             // If marked alpha, we could just delete the record, or explicitly set status to 'alpha'
